@@ -1,8 +1,11 @@
 [package]
-name = "bam_filter"
+name = "bambam"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bedrs = "0.2.26"
+bio = "3.0.0"
 clap = { version = "4.5.53", features = ["derive"] }
+fm-index = "0.3.0"
 rust-htslib = "0.51.0"
