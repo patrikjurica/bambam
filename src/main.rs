@@ -39,8 +39,11 @@ fn main() {
 
     let mut reads = parse(&args.input_bam_file).unwrap();
 
+    /*
     match filter(&mut reads) {
         Ok(_) => println!("BAM iteration complete."),
         Err(e) => eprintln!("An error occurred during BAM processing: {}", e),
     }
+
+     */
 }
