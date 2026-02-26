@@ -3,6 +3,12 @@ use std::path::PathBuf;
 use rust_htslib::bam::Reader;
 use rust_htslib::errors::Error;
 
+pub fn load(file: &PathBuf) -> Result<Reader, rust_htslib::errors::Error> {
+    let mut reader = Reader::from_path(file)?;
+
+    Ok(reader)
+}
+
 pub fn parse(file: &PathBuf) -> Result<Reader, rust_htslib::errors::Error> {
     let mut reader = bam::Reader::from_path(file)?;
     let header = bam::Header::from_template(reader.header());
@@ -17,5 +23,5 @@ pub fn parse(file: &PathBuf) -> Result<Reader, rust_htslib::errors::Error> {
         }
     }
 
-    Result::Ok(reader)
+    Ok(reader)
 }
