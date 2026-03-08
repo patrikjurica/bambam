@@ -1,6 +1,8 @@
 mod parse;
 mod samtools_filter;
 mod filter;
+mod data_structures;
+mod load;
 
 use clap::Parser;
 use std::path::PathBuf;
