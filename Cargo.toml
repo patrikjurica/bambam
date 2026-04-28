@@ -10,7 +10,7 @@ description = "A CLI tool to filter long-read BAM files using sequence-specific 
 clap = { version = "4.4", features = ["derive"] }
 
 # bioinformatics I/O
-noodles = { version = "0.85", features = ["bam", "sam", "fasta", "bgzf"] }
+noodles = { version = "0.109.0", features = ["bam", "sam", "fasta", "bgzf"] }
 
 # error handling
 anyhow = "1.0"

@@ -3,3 +3,4 @@
 /dna_data
 .DS_Store
 Cargo.lock
+out.bam

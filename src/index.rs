@@ -26,9 +26,9 @@ pub fn build_rare_kmers(
     let mut kmer_counts: FxHashMap<KmerVal, u32> = FxHashMap::default();
 
     // pass 1: count all k-mers
-    let mut reader = fasta::Reader::new(BufReader::new(
-        File::open(ref_file).context("Failed to open FASTA file for Pass 1")?,
-    ));
+    let mut reader = File::open(ref_file)
+        .map(BufReader::new)
+        .map(fasta::io::Reader::new)?;
 
     for result in reader.records() {
         let record = result.context("Failed to read FASTA record")?;
@@ -67,9 +67,9 @@ pub fn build_rare_kmers(
     let mut expected_kmers: KmerLibrary = FxHashMap::default();
 
     // re-open the reader for pass 2 to avoid storing the reference in RAM
-    let mut reader = fasta::Reader::new(BufReader::new(
-        File::open(ref_file).context("Failed to open FASTA file for Pass 2")?,
-    ));
+    let mut reader = File::open(ref_file)
+        .map(BufReader::new)
+        .map(fasta::io::Reader::new)?;
 
     for result in reader.records() {
         let record = result.context("Failed to read FASTA record")?;

@@ -2,7 +2,6 @@ use anyhow::Result;
 use clap::Parser;
 use std::time::Instant;
 
-// Import our internal modules
 use bambam::filter::filter_bam;
 use bambam::index::{apply_dynamic_threshold_tolerance, build_rare_kmers};
 use bambam::io::export_bed;
@@ -55,17 +54,15 @@ struct Args {
 }
 
 fn main() -> Result<()> {
-    // Parse the command line arguments
     let args = Args::parse();
 
-    // Start the timer (Instant is much more accurate than time.time() in Python)
     let start_time = Instant::now();
 
     println!("Building the k-mer dictionary...");
     // build_rare_kmers applies the baseline tolerance to all k-mers initially
     let mut kmers = build_rare_kmers(&args.ref_file, args.len, args.min, args.max, args.tolerance)?;
 
-    // If dynamic tolerance is requested, overwrite the baseline tolerances
+    // ff dynamic tolerance is requested, overwrite
     if args.dyn_tol {
         println!("Applying dynamic threshold tolerance (Distance Threshold: 5000)...");
         kmers = apply_dynamic_threshold_tolerance(kmers, args.tolerance, 5000);
@@ -73,11 +70,11 @@ fn main() -> Result<()> {
         println!("Applying static tolerance of {} to all k-mers...", args.tolerance);
     }
 
-    // Calculate total unique k-mers quickly
+    // calculate total unique k-mers quickly
     let total_kmers: usize = kmers.values().map(|v| v.len()).sum();
     println!("Successfully loaded {} unique rare k-mers.", total_kmers);
 
-    // Export BED file if requested
+    // export BED if requested
     if let Some(bed_path) = &args.bed {
         println!("Exporting k-mer coordinates to {}...", bed_path);
         export_bed(&kmers, bed_path, args.len)?;
@@ -86,7 +83,6 @@ fn main() -> Result<()> {
 
     println!("Processing BAM file: {}...", args.input_bam_file);
 
-    // Pass references (&) to avoid copying massive data structures
     filter_bam(
         &args.input_bam_file,
         &args.output,
@@ -98,7 +94,6 @@ fn main() -> Result<()> {
 
     println!("BAM filtering complete. Saved to {}", args.output);
 
-    // Print elapsed time beautifully (e.g., "Took 12.45s to run.")
     println!("Took {:.2?} to run.", start_time.elapsed());
 
     Ok(())
