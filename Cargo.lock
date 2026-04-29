@@ -91,6 +91,7 @@ dependencies = [
  "clap",
  "fm-index",
  "rust-htslib",
+ "smallvec",
 ]
 
 [[package]]

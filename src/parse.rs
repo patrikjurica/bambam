@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use rust_htslib::bam::Reader;
 use rust_htslib::errors::Error;
 
-pub fn load(file: &PathBuf) -> Result<Reader, rust_htslib::errors::Error> {
+pub fn load_reads(file: &PathBuf) -> Result<Reader, rust_htslib::errors::Error> {
     let mut reader = Reader::from_path(file)?;
 
     Ok(reader)

@@ -7,8 +7,8 @@ mod load;
 use clap::Parser;
 use std::path::PathBuf;
 use rust_htslib::bam::Read;
-use crate::parse::parse;
-use crate::parse::load;
+use crate::parse::{load_reads, parse};
+use crate::load::load_kmers;
 use crate::filter::filter;
 
 // DNA base encoding
@@ -24,9 +24,19 @@ pub struct Args {
     /// The path to the input BAM file to be filtered.
     pub input_bam_file: PathBuf,
 
-    // 2. Required Positional Argument (Output File)
+    // 2. Required Positional Argument (Reference File)
+    /// The file containing the rare k-mers as well as the rest of the genome
+    pub ref_file: PathBuf,
+
+    // 3. Required Positional Argument (K-mer locations file)
+    /// The file containing the locations of the rare k-mers in the reference
+
+    pub bed_file: PathBuf,
+
+    // Optional Argument (Output File)
     /// The path where the filtered output BAM file will be written.
-    pub output_bam_file: PathBuf,
+    #[arg(long, short, default_value = "./out.bam")]
+    pub output: PathBuf,
 
     // 3. Optional Flag: --min
     /// Minimal k-mer count to be considered for filtering.
@@ -54,12 +64,7 @@ fn main() {
 
     // let mut reads = parse(&args.input_bam_file).unwrap();
 
-    let mut reads = load(&args.input_bam_file).unwrap();
+    let mut reads = load_reads(&args.input_bam_file).unwrap();
     
-    let kmers = filter(&mut reads, &args.len);
-
-    match filter(&mut reads) {
-        Ok(_) => println!("BAM iteration complete."),
-        Err(e) => eprintln!("An error occurred during BAM processing: {}", e),
-    }
+    let kmers = load_kmers(&args.bed_file, &args.ref_file);
 }

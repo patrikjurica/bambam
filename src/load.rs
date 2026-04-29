@@ -12,6 +12,14 @@ use rust_htslib::bam::Reader;
 use crate::{A, C, G, T};
 use crate::data_structures::{Kmers, Kmer, Location, Coordinates, ChromosomeTable, ChromosomeID};
 
+pub fn load_kmers(bed_file: &PathBuf, ref_file: &PathBuf) -> Kmers {
+    let (coords, table) = load_bed(bed_file).unwrap();
+    let kmers = load_from_ref(ref_file, &table, &coords).unwrap();
+    
+    kmers
+}
+
+
 /// Loads the rare k-mer coordinates from a BED file
 fn load_bed(file: &PathBuf) -> Result<(Vec<Location>, ChromosomeTable), Box<dyn std::error::Error>> {
     // Takes a filename
