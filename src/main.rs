@@ -45,11 +45,11 @@ struct Args {
     tolerance: usize,
 
     /// Enable dynamic, density-aware tolerance based on k-mer isolation.
-    #[arg(long)]
+    #[arg(short, long, default_value_t = false)]
     dyn_tol: bool,
 
     /// Optional: Path to output a BED file of the rare k-mer coordinates.
-    #[arg(long)]
+    #[arg(short, long)]
     bed: Option<String>,
 }
 
