@@ -21,7 +21,7 @@ struct Args {
     output: String,
 
     /// Minimal k-mer count in the reference to be considered "rare".
-    #[arg(long, default_value_t = 5)]
+    #[arg(long, default_value_t = 1)]
     min: u32,
 
     /// Maximal k-mer count in the reference to be considered "rare".
@@ -33,7 +33,7 @@ struct Args {
     min_count: usize,
 
     /// Minimum percentage of intact expected rare k-mers required to keep a read.
-    #[arg(short = 'p', long = "pct", default_value_t = 100.0)]
+    #[arg(short = 'p', long = "pct", default_value_t = 85.0)]
     pct: f64,
 
     /// Length of the unique k-mer.
