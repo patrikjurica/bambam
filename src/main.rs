@@ -62,7 +62,7 @@ fn main() -> Result<()> {
     // build_rare_kmers applies the baseline tolerance to all k-mers initially
     let mut kmers = build_rare_kmers(&args.ref_file, args.len, args.min, args.max, args.tolerance)?;
 
-    // ff dynamic tolerance is requested, overwrite
+    // ff dynamic tolerance requested, overwrite
     if args.dyn_tol {
         println!("Applying dynamic threshold tolerance (Distance Threshold: 5000)...");
         kmers = apply_dynamic_threshold_tolerance(kmers, args.tolerance, 5000);
@@ -70,7 +70,7 @@ fn main() -> Result<()> {
         println!("Applying static tolerance of {} to all k-mers...", args.tolerance);
     }
 
-    // calculate total unique k-mers quickly
+    // calculate total unique k-mers
     let total_kmers: usize = kmers.values().map(|v| v.len()).sum();
     println!("Successfully loaded {} unique rare k-mers.", total_kmers);
 
