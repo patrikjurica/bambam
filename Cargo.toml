@@ -2,11 +2,17 @@
 name = "bambam"
 version = "0.1.0"
 edition = "2024"
+authors = ["Patrik Juica <patrik.lev.jurica@gmail.com>"]
+description = "A CLI tool to filter long-read BAM files using sequence-specific rare k-mers."
 
 [dependencies]
-bedrs = "0.2.26"
-bio = "3.0.0"
-clap = { version = "4.5.53", features = ["derive"] }
-fm-index = "0.3.0"
-rust-htslib = "0.51.0"
-smallvec = "1.15.1"
+# CLI Argument Parsing
+clap = { version = "4.4", features = ["derive"] }
+
+# bioinformatics I/O
+noodles = { version = "0.109.0", features = ["bam", "sam", "fasta", "bgzf"] }
+
+# error handling
+anyhow = "1.0"
+
+rustc-hash = "1.1"
