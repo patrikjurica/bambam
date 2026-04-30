@@ -1,5 +1,16 @@
 # Rare k-mer read filtering tool
 A tool for filtering BAM files based on the presence, position and structural compliance of rare k-mers.
+
+## How to install
+If you have not already, install Rust using this link:  
+https://rust-lang.org/tools/install/
+
+After cloning this repo, just run
+```terminaloutput
+$ cargo build --release
+```
+You will find the compiled binary inside ./target/release  
+
 ## Usage
 ```terminaloutput
 $ bambam <INPUT_BAM_FILE> <OUTPUT_BAM_FILE> [options]
