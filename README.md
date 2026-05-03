@@ -1,4 +1,5 @@
 # BAMBAM - a rare k-mer read filtering tool
+![Logo](logo_bambam.png)
 A tool for filtering BAM files based on the presence, position and structural compliance of rare k-mers.
 
 ## How to install
