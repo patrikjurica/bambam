@@ -3,6 +3,7 @@ use clap::Parser;
 use std::time::Instant;
 
 use bambam::filter::filter_bam;
+use bambam::filter_new::filter_bam as filter_bam_new;
 use bambam::index::{apply_dynamic_threshold_tolerance, build_rare_kmers};
 use bambam::io::export_bed;
 
@@ -83,7 +84,7 @@ fn main() -> Result<()> {
 
     println!("Processing BAM file: {}...", args.input_bam_file);
 
-    filter_bam(
+    filter_bam_new(
         &args.input_bam_file,
         &args.output,
         &kmers,
