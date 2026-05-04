@@ -38,6 +38,7 @@ pub fn filter_bam(
     let mut ref_to_query_buffer: Vec<usize> = Vec::with_capacity(100_000);
     let mut base_seq_buffer: Vec<u8> = Vec::with_capacity(100_000);
     let mut rc_seq_buffer: Vec<u8> = Vec::with_capacity(100_000);
+    let mut local_seq_buffer: Vec<u8> = Vec::with_capacity(100_000);
 
     let mut read_group = Vec::new();
     let mut current_qname: Option<Vec<u8>> = None;
@@ -45,7 +46,6 @@ pub fn filter_bam(
     for result in reader.records() {
         let record = result.context("Failed to read BAM record")?;
 
-        // noodles returns the name as a BStr, we explicitly extract it as a byte slice
         let qname = match record.name() {
             Some(name) => {
                 let bytes: &[u8] = name.as_ref();
@@ -69,6 +69,7 @@ pub fn filter_bam(
                     &mut ref_to_query_buffer,
                     &mut base_seq_buffer,
                     &mut rc_seq_buffer,
+                    &mut local_seq_buffer,
                 )?;
             }
             read_group.clear();
@@ -93,6 +94,7 @@ pub fn filter_bam(
             &mut ref_to_query_buffer,
             &mut base_seq_buffer,
             &mut rc_seq_buffer,
+            &mut local_seq_buffer,
         )?;
     }
 
@@ -117,16 +119,18 @@ fn process_read_group<W: std::io::Write>(
     ref_to_query_buffer: &mut Vec<usize>,
     base_seq_buffer: &mut Vec<u8>,
     rc_seq_buffer: &mut Vec<u8>,
+    local_seq_buffer: &mut Vec<u8>,
 ) -> Result<()> {
-    // 1. locate the sequence inside the group (usually the primary alignment)
+    // 1. Locate the LONGEST sequence inside the group (true primary alignment)
     base_seq_buffer.clear();
     let mut base_is_rc = false;
 
     for rec in group {
-        if !rec.sequence().is_empty() {
-            base_seq_buffer.extend(rec.sequence().iter().map(u8::from));
+        let seq = rec.sequence();
+        if seq.len() > base_seq_buffer.len() {
+            base_seq_buffer.clear();
+            base_seq_buffer.extend(seq.iter().map(u8::from));
             base_is_rc = rec.flags().is_reverse_complemented();
-            break;
         }
     }
 
@@ -198,6 +202,26 @@ fn process_read_group<W: std::io::Write>(
         ref_to_query_buffer.clear();
         ref_to_query_buffer.resize(ref_len + 1, usize::MAX);
 
+        // Determine if we are borrowing the base sequence or using the record's own
+        let use_base_seq = record.sequence().is_empty();
+
+        let active_seq = if use_base_seq {
+            let is_rc = record.flags().is_reverse_complemented();
+            if is_rc == base_is_rc {
+                &base_seq_buffer
+            } else {
+                if !rc_computed {
+                    reverse_complement_bytes(base_seq_buffer, rc_seq_buffer);
+                    rc_computed = true;
+                }
+                &rc_seq_buffer
+            }
+        } else {
+            local_seq_buffer.clear();
+            local_seq_buffer.extend(record.sequence().iter().map(u8::from));
+            &local_seq_buffer
+        };
+
         let mut curr_ref = ref_start;
         let mut curr_query = 0;
 
@@ -217,21 +241,18 @@ fn process_read_group<W: std::io::Write>(
                 }
                 Kind::Insertion | Kind::SoftClip => { curr_query += len; }
                 Kind::Deletion | Kind::Skip => { curr_ref += len; }
-                Kind::HardClip | Kind::Pad => {}
+                Kind::HardClip => {
+                    // CRITICAL BIOLOGICAL LOGIC:
+                    // If we are borrowing the full-length base sequence, the 'hard clipped' bases
+                    // are physically present in the buffer, so we must advance the query coordinate.
+                    // If we are using the record's own sequence, the bases are physically gone.
+                    if use_base_seq {
+                        curr_query += len;
+                    }
+                }
+                Kind::Pad => {}
             }
         }
-
-        // 3. LAZY REVERSE COMPLEMENT EVALUATION
-        let is_rc = record.flags().is_reverse_complemented();
-        let active_seq = if is_rc == base_is_rc {
-            &base_seq_buffer
-        } else {
-            if !rc_computed {
-                reverse_complement_bytes(base_seq_buffer, rc_seq_buffer);
-                rc_computed = true;
-            }
-            &rc_seq_buffer
-        };
 
         let mut valid_kmer_count = 0;
 
@@ -247,6 +268,11 @@ fn process_read_group<W: std::io::Write>(
             let q_end_inclusive = ref_to_query_buffer[end_idx];
 
             if q_start == usize::MAX || q_end_inclusive == usize::MAX {
+                continue;
+            }
+
+            // STRICT BOUNDS CHECK to prevent panics on malformed reads
+            if q_start >= active_seq.len() || q_end_inclusive >= active_seq.len() {
                 continue;
             }
 
