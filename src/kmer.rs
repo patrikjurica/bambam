@@ -5,6 +5,8 @@ const C: u64 = 0b01; // 1
 const G: u64 = 0b10; // 2
 const T: u64 = 0b11; // 3
 
+const U: u64 = 0b11; // for RNA (T = U)
+
 /// encodes a single nucleotide byte into its 2-bit representation
 /// returns `None` if it encounters an 'N' or any invalid character
 #[inline(always)]
@@ -14,6 +16,7 @@ pub fn encode_base(base: u8) -> Option<u64> {
         b'C' | b'c' => Some(C),
         b'G' | b'g' => Some(G),
         b'T' | b't' => Some(T),
+        b'U' | b'u' => Some(U),
         _ => None,
     }
 }
