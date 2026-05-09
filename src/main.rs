@@ -52,6 +52,10 @@ struct Args {
     /// Optional: Path to output a BED file of the rare k-mer coordinates.
     #[arg(short, long)]
     bed: Option<String>,
+
+    /// Only process primary alignments (much faster, allows coordinate-sorted BAMs)
+    #[arg(long, default_value_t = false)]
+    primary_only: bool,
 }
 
 fn main() -> Result<()> {
@@ -84,13 +88,14 @@ fn main() -> Result<()> {
 
     println!("Processing BAM file: {}...", args.input_bam_file);
 
-    filter_bam_new(
+    filter_bam(
         &args.input_bam_file,
         &args.output,
         &kmers,
         args.len,
         args.pct,
         args.min_count,
+        args.primary_only,
     )?;
 
     println!("BAM filtering complete. Saved to {}", args.output);
