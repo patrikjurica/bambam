@@ -48,13 +48,14 @@ struct Args {
     #[arg(short, long, default_value_t = false)]
     dyn_tol: bool,
 
+    /// Only process primary alignments (faster, allows coordinate-sorted BAMs).
+    /// Otherwise, the bam file needs to be sorted by name.
+    #[arg(long, default_value_t = false)]
+    primary_only: bool,
+
     /// Optional: Path to output a BED file of the rare k-mer coordinates.
     #[arg(short, long)]
     bed: Option<String>,
-
-    /// Only process primary alignments (much faster, allows coordinate-sorted BAMs)
-    #[arg(long, default_value_t = false)]
-    primary_only: bool,
 }
 
 fn main() -> Result<()> {
