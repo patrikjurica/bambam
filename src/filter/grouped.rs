@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
 use noodles::bam;
-use noodles::sam::alignment::Record; // Required trait for .flags() and .sequence()
 use crate::types::KmerLibrary;
 
 use super::engine::evaluate_alignment;

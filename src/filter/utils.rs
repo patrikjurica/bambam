@@ -1,5 +1,4 @@
 use noodles::bam;
-use noodles::sam::alignment::Record; // Required trait for .reference_sequence_id()
 
 /// Helper to safely extract chromosome strings from the header map
 pub(crate) fn extract_chrom_name(record: &bam::Record, header: &noodles::sam::Header) -> Option<String> {

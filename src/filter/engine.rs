@@ -29,10 +29,7 @@ pub(crate) fn evaluate_alignment(
         _ => return (false, false),
     };
 
-    let mut idx = match chrom_kmers.binary_search_by_key(&ref_start, |k| k.start) {
-        Ok(i) => i,
-        Err(i) => i,
-    };
+    let mut idx = chrom_kmers.binary_search_by_key(&ref_start, |k| k.start).unwrap_or_else(|i| i);
 
     let mut kmers_in_range = Vec::new();
     while idx < chrom_kmers.len() {

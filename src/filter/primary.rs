@@ -1,10 +1,11 @@
 use anyhow::{Context, Result};
 use noodles::bam;
-use noodles::sam::alignment::Record; // Required trait for .flags() and .sequence()
 use crate::types::KmerLibrary;
 
 use super::engine::evaluate_alignment;
 use super::utils::extract_chrom_name;
+
+const PRIMARY: bool = false;
 
 pub(crate) fn process_primary_stream<R: std::io::Read, W: std::io::Write>(
     reader: &mut bam::io::Reader<R>,
@@ -50,7 +51,7 @@ pub(crate) fn process_primary_stream<R: std::io::Read, W: std::io::Write>(
             kmer_len,
             min_pct,
             min_count,
-            false, // never using borrowed base sequences here
+            PRIMARY, // primary alignments contains the sequence - no need to borrow
         );
 
         if has_zero { zero_kmers += 1; }

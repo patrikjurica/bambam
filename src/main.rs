@@ -3,7 +3,6 @@ use clap::Parser;
 use std::time::Instant;
 
 use bambam::filter::filter_bam;
-use bambam::filter_new::filter_bam as filter_bam_new;
 use bambam::index::{apply_dynamic_threshold_tolerance, build_rare_kmers};
 use bambam::io::export_bed;
 
@@ -63,8 +62,8 @@ fn main() -> Result<()> {
 
     let start_time = Instant::now();
 
-    println!("Building the k-mer dictionary...");
     // build_rare_kmers applies the baseline tolerance to all k-mers initially
+    println!("Building the k-mer dictionary...");
     let mut kmers = build_rare_kmers(&args.ref_file, args.len, args.min, args.max, args.tolerance)?;
 
     // ff dynamic tolerance requested, overwrite
