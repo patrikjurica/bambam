@@ -9,8 +9,8 @@ use crate::distance::edit_distance;
 use crate::kmer::{decode_kmer, encode_kmer};
 use crate::types::KmerLibrary;
 
-/// Filters a BAM file based on absolute positional compliance of rare k-mers.
-/// ASSUMES the input BAM is name-sorted (`samtools sort -n`) to group alignments.
+/// filters a BAM file based on absolute positional compliance of rare k-mers
+/// REQUIRES: the input BAM is name-sorted (`samtools sort -n`) to group alignments
 pub fn filter_bam(
     bam_in_path: &str,
     bam_out_path: &str,
@@ -244,7 +244,7 @@ fn process_read_group<W: std::io::Write>(
                 Kind::HardClip => {
                     // CRITICAL BIOLOGICAL LOGIC:
                     // If we are borrowing the full-length base sequence, the 'hard clipped' bases
-                    // are physically present in the buffer, so we must advance the query coordinate.
+                    // are (or might be) physically present in the buffer, so we must advance the query coordinate.
                     // If we are using the record's own sequence, the bases are physically gone.
                     if use_base_seq {
                         curr_query += len;
@@ -257,25 +257,33 @@ fn process_read_group<W: std::io::Write>(
         let mut valid_kmer_count = 0;
 
         for kmer in &kmers_in_range {
-            let start_idx = kmer.start.saturating_sub(ref_start);
-            let end_idx = (kmer.end - 1).saturating_sub(ref_start);
+            let mut start_idx = kmer.start.saturating_sub(ref_start);
+            let mut end_idx = (kmer.end - 1).saturating_sub(ref_start);
 
             if start_idx >= ref_to_query_buffer.len() || end_idx >= ref_to_query_buffer.len() {
                 continue;
             }
 
-            let q_start = ref_to_query_buffer[start_idx];
-            let q_end_inclusive = ref_to_query_buffer[end_idx];
+            // 2. FUZZY BOUNDARY SCAN FORWARD (find nearest valid start)
+            let mut q_start = ref_to_query_buffer[start_idx];
+            while q_start == usize::MAX && start_idx < end_idx {
+                start_idx += 1;
+                q_start = ref_to_query_buffer[start_idx];
+            }
 
+            // 3. FUZZY BOUNDARY SCAN BACKWARD (find nearest valid end)
+            let mut q_end_inclusive = ref_to_query_buffer[end_idx];
+            while q_end_inclusive == usize::MAX && end_idx > start_idx {
+                end_idx -= 1;
+                q_end_inclusive = ref_to_query_buffer[end_idx];
+            }
+
+            // If they are still MAX, it means the ENTIRE k-mer region was deleted.
             if q_start == usize::MAX || q_end_inclusive == usize::MAX {
                 continue;
             }
 
-            // STRICT BOUNDS CHECK to prevent panics on malformed reads
-            if q_start >= active_seq.len() || q_end_inclusive >= active_seq.len() {
-                continue;
-            }
-
+            // 4. Extract the slice and evaluate length
             let actual_len = (q_end_inclusive - q_start) + 1;
             let length_diff = actual_len.abs_diff(kmer_len);
 
