@@ -16,3 +16,4 @@ noodles = { version = "0.110.0", features = ["bam", "sam", "fasta", "bgzf"] }
 anyhow = "1.0"
 
 rustc-hash = "2.1.2"
+crossbeam-channel = "0.5.15"
