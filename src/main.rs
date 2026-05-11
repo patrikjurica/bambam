@@ -48,6 +48,10 @@ struct Args {
     #[arg(short, long, default_value_t = false)]
     dyn_tol: bool,
 
+    /// Set distance threshold for dynamic tolerance.
+    #[arg(long, default_value_t = 5000)]
+    thr: usize,
+
     /// Only process primary alignments (faster, allows coordinate-sorted BAMs).
     /// Otherwise, the bam file needs to be sorted by name.
     #[arg(long, default_value_t = false)]
@@ -70,7 +74,7 @@ fn main() -> Result<()> {
     // ff dynamic tolerance requested, overwrite
     if args.dyn_tol {
         println!("Applying dynamic threshold tolerance (Distance Threshold: 5000)...");
-        kmers = apply_dynamic_threshold_tolerance(kmers, args.tolerance, 5000);
+        kmers = apply_dynamic_threshold_tolerance(kmers, args.tolerance, args.thr);
     } else {
         println!("Applying static tolerance of {} to all k-mers...", args.tolerance);
     }
