@@ -16,10 +16,10 @@ pub fn build_rare_kmers(
     base_tolerance: usize,
 ) -> Result<KmerLibrary> {
     // prevent overflow if asked for a k-mer of exactly 32
-    let mask: u64 = if kmer_len == 32 {
-        u64::MAX
+    let mask: KmerVal = if kmer_len == 32 {
+        KmerVal::MAX
     } else {
-        (1_u64 << (2 * kmer_len)) - 1
+        ((1 as KmerVal) << (2 * kmer_len)) - 1
     };
 
     println!("Pass 1: Counting k-mers in the reference genome...");
@@ -32,7 +32,7 @@ pub fn build_rare_kmers(
 
     for result in reader.records() {
         let record = result.context("Failed to read FASTA record")?;
-        let mut kmer_val: u64 = 0;
+        let mut kmer_val: KmerVal = 0;
         let mut valid_bases: usize = 0;
 
         for &byte in record.sequence().as_ref() {
@@ -78,7 +78,7 @@ pub fn build_rare_kmers(
         let chrom = String::from_utf8_lossy(record.name()).into_owned();
         let mut chrom_kmers = Vec::new();
 
-        let mut kmer_val: u64 = 0;
+        let mut kmer_val: KmerVal = 0;
         let mut valid_bases: usize = 0;
 
         for (i, &byte) in record.sequence().as_ref().iter().enumerate() {

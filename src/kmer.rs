@@ -1,16 +1,18 @@
 use crate::types::KmerVal;
 
-const A: u64 = 0b00; // 0
-const C: u64 = 0b01; // 1
-const G: u64 = 0b10; // 2
-const T: u64 = 0b11; // 3
+const A: KmerVal = 0b00; // 0
+const C: KmerVal = 0b01; // 1
+const G: KmerVal = 0b10; // 2
+const T: KmerVal = 0b11; // 3
 
-const U: u64 = 0b11; // for RNA (T = U)
+const U: KmerVal = 0b11; // for RNA (T = U)
+
+// TODO: check RNA reads
 
 /// encodes a single nucleotide byte into its 2-bit representation
 /// returns `None` if it encounters an 'N' or any invalid character
 #[inline(always)]
-pub fn encode_base(base: u8) -> Option<u64> {
+pub fn encode_base(base: u8) -> Option<KmerVal> {
     match base {
         b'A' | b'a' => Some(A),
         b'C' | b'c' => Some(C),
@@ -23,7 +25,7 @@ pub fn encode_base(base: u8) -> Option<u64> {
 
 /// encodes a complete DNA sequence (as a byte slice) into a 2-bit integer representation
 pub fn encode_kmer(seq: &[u8]) -> Option<KmerVal> {
-    let mut kmer: u64 = 0;
+    let mut kmer: KmerVal = 0;
 
     for &byte in seq {
         kmer <<= 2;
