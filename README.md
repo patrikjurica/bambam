@@ -31,9 +31,15 @@ $ bambam <INPUT_BAM_FILE> <OUTPUT_BAM_FILE> [options]
 || --max <MAX> |            Maximal k-mer count in the reference to be considered "rare" | 10 |  
   |-i| --inf <MIN_COUNT> |       Minimal count of k-mers in a read for the read to be kept | 1 |
   |-p| --pct <PCT>  |            Minimum percentage of intact expected rare k-mers required to keep a read | 85 |
-  |-l| --len <LEN>  |            Length of the unique k-mer (max: 32) | 31
+  |-l| --len <LEN>  |            Length of the unique k-mer (max: 64) | 31
   |-t| --tolerance <TOLERANCE> | Maximum allowed edit distance (or base tolerance if --dyn-tol is used) | 0 |
   |-d| --dyn-tol |                Enable dynamic, density-aware tolerance based on k-mer isolation | |
+  |  | --thr |                    Set distance threshold for dynamic tolerance | 5000 |
+  |  | --primary-only |          Only process primary alignments (faster, allows coordinate-sorted BAMs). Otherwise, the BAM file needs to be sorted by name | |
+  |  | --ins-cost   |            Penalty cost for nucleotide insertion ||
+  |  | --del-cost   |            Penalty cost for nucleotide deletion ||
+  |  | --sub-cost   |            Penalty cost for nucleotide substitution ||
+  |  | --coverage   |            Optional: Path to output a BED file of regions with zero read coverage after filtering. || 
   |-b| --bed <BED>  |            Optional: Path to output a BED file of the rare k-mer coordinates | |
   |-h| --help    |               Print help  |
   |-V| --version  |              Print version|
