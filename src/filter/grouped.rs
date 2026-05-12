@@ -1,11 +1,11 @@
-use anyhow::{Result};
+use anyhow::Result;
 use crossbeam_channel::bounded;
 use noodles::bam;
 use std::thread;
 
 use crate::types::KmerLibrary;
 use super::engine::evaluate_alignment;
-use super::utils::{extract_chrom_name, reverse_complement_bytes};
+use super::utils::extract_chrom_name;
 
 pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>(
     reader: &mut bam::io::Reader<R>,
@@ -52,7 +52,6 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
                 // This prevents thread locking and maximizes CPU cache hits.
                 let mut ref_to_query_buffer = Vec::with_capacity(100_000);
                 let mut base_seq_buffer = Vec::with_capacity(100_000);
-                let mut rc_seq_buffer = Vec::with_capacity(100_000);
                 let mut local_seq_buffer = Vec::with_capacity(100_000);
                 let mut valid_group_buffer = Vec::with_capacity(10);
 
@@ -65,7 +64,7 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
                     evaluate_group(
                         &group, header, expected_kmers, kmer_len, min_pct, min_count,
                         &mut local_zero, &mut local_unmapped, &mut ref_to_query_buffer,
-                        &mut base_seq_buffer, &mut rc_seq_buffer, &mut local_seq_buffer,
+                        &mut base_seq_buffer, &mut local_seq_buffer,
                         &mut valid_group_buffer
                     );
 
@@ -146,12 +145,10 @@ fn evaluate_group(
     local_unmapped: &mut usize,
     ref_to_query_buffer: &mut Vec<usize>,
     base_seq_buffer: &mut Vec<u8>,
-    rc_seq_buffer: &mut Vec<u8>,
     local_seq_buffer: &mut Vec<u8>,
     valid_group_buffer: &mut Vec<bam::Record>,
 ) {
     base_seq_buffer.clear();
-    let mut base_is_rc = false;
 
     // Find longest sequence to borrow
     for rec in group {
@@ -159,7 +156,6 @@ fn evaluate_group(
         if seq.len() > base_seq_buffer.len() {
             base_seq_buffer.clear();
             base_seq_buffer.extend(seq.iter().map(u8::from));
-            base_is_rc = rec.flags().is_reverse_complemented();
         }
     }
 
@@ -167,8 +163,6 @@ fn evaluate_group(
         *local_unmapped += group.len();
         return;
     }
-
-    let mut rc_computed = false;
 
     for record in group {
         if record.flags().is_unmapped() {
@@ -189,16 +183,7 @@ fn evaluate_group(
         let use_base_seq = record.sequence().is_empty();
 
         let active_seq = if use_base_seq {
-            let is_rc = record.flags().is_reverse_complemented();
-            if is_rc == base_is_rc {
-                base_seq_buffer.as_slice()
-            } else {
-                if !rc_computed {
-                    reverse_complement_bytes(base_seq_buffer, rc_seq_buffer);
-                    rc_computed = true;
-                }
-                rc_seq_buffer.as_slice()
-            }
+            base_seq_buffer.as_slice()
         } else {
             local_seq_buffer.clear();
             local_seq_buffer.extend(record.sequence().iter().map(u8::from));
