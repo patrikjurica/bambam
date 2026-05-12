@@ -53,6 +53,18 @@ struct Args {
     #[arg(long, default_value_t = false)]
     primary_only: bool,
 
+    /// Penalty cost for a nucleotide insertion
+    #[arg(long, default_value_t = 1)]
+    ins_cost: usize,
+
+    /// Penalty cost for a nucleotide deletion
+    #[arg(long, default_value_t = 1)]
+    del_cost: usize,
+
+    /// Penalty cost for a nucleotide substitution (SNP/Miscall)
+    #[arg(long, default_value_t = 1)]
+    sub_cost: usize,
+
     /// Optional: Path to output a BED file of the rare k-mer coordinates.
     #[arg(short, long)]
     bed: Option<String>,
@@ -96,6 +108,9 @@ fn main() -> Result<()> {
         args.pct,
         args.min_count,
         args.primary_only,
+        args.ins_cost,
+        args.del_cost,
+        args.sub_cost,
     )?;
 
     println!("BAM filtering complete. Saved to {}", args.output);

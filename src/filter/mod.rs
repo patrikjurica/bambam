@@ -15,6 +15,7 @@ mod utils;
 /// Acts as a router: if `primary_only` is true, it uses a high-speed sequential stream.
 /// If false, it groups alignments by QNAME (Requires `samtools sort -n`)
 /// and parallelizes the processing
+#[allow(clippy::too_many_arguments)]
 pub fn filter_bam(
     bam_in_path: &str,
     bam_out_path: &str,
@@ -23,6 +24,9 @@ pub fn filter_bam(
     min_pct: f64,
     min_count: usize,
     primary_only: bool,
+    ins_cost: usize,
+    del_cost: usize,
+    sub_cost: usize,
 ) -> Result<()> {
     let mut reader = bam::io::Reader::new(BufReader::with_capacity(
         128 * 1024,
@@ -59,12 +63,14 @@ pub fn filter_bam(
     if primary_only {
         println!("Running in PRIMARY ONLY mode. Processing sequentially...");
         primary::process_primary_stream(
-            &mut reader, &mut writer, &header, expected_kmers, kmer_len, min_pct, min_count
+            &mut reader, &mut writer, &header, expected_kmers, kmer_len, min_pct, min_count,
+            ins_cost, del_cost, sub_cost
         )?;
     } else {
         println!("Running in GROUPED mode. Expecting name-sorted BAM...");
         grouped::process_grouped_stream(
-            &mut reader, &mut writer, &header, expected_kmers, kmer_len, min_pct, min_count
+            &mut reader, &mut writer, &header, expected_kmers, kmer_len, min_pct, min_count,
+            ins_cost, del_cost, sub_cost
         )?;
     }
 

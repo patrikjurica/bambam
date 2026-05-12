@@ -7,6 +7,7 @@ use crate::types::KmerLibrary;
 use super::engine::evaluate_alignment;
 use super::utils::extract_chrom_name;
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>(
     reader: &mut bam::io::Reader<R>,
     writer: &mut bam::io::Writer<W>,
@@ -15,6 +16,9 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
     kmer_len: usize,
     min_pct: f64,
     min_count: usize,
+    ins_cost: usize,
+    del_cost: usize,
+    sub_cost: usize,
 ) -> Result<()> {
     // 1. Create bounded channels to prevent RAM blowouts
     // Capacity of 1000 means the main thread will pause reading if workers get backed up.
@@ -65,7 +69,8 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
                         &group, header, expected_kmers, kmer_len, min_pct, min_count,
                         &mut local_zero, &mut local_unmapped, &mut ref_to_query_buffer,
                         &mut base_seq_buffer, &mut local_seq_buffer,
-                        &mut valid_group_buffer
+                        &mut valid_group_buffer,
+                        ins_cost, del_cost, sub_cost // <--- Passed to helper
                     );
 
                     if !valid_group_buffer.is_empty() {
@@ -147,6 +152,9 @@ fn evaluate_group(
     base_seq_buffer: &mut Vec<u8>,
     local_seq_buffer: &mut Vec<u8>,
     valid_group_buffer: &mut Vec<bam::Record>,
+    ins_cost: usize,
+    del_cost: usize,
+    sub_cost: usize,
 ) {
     base_seq_buffer.clear();
 
@@ -192,7 +200,8 @@ fn evaluate_group(
 
         let (passes, has_zero) = evaluate_alignment(
             record, active_seq, chrom_kmers, ref_to_query_buffer,
-            kmer_len, min_pct, min_count, use_base_seq
+            kmer_len, min_pct, min_count, use_base_seq,
+            ins_cost, del_cost, sub_cost // <--- Passed to engine
         );
 
         if has_zero { *local_zero += 1; }

@@ -2,7 +2,7 @@ use noodles::bam;
 use noodles::sam::alignment::record::cigar::op::Kind;
 use noodles::sam::alignment::Record; // Required trait for .alignment_start(), etc.
 
-use crate::distance::edit_distance;
+use crate::distance::edit_distance_weighted;
 use crate::kmer::{decode_kmer, encode_kmer};
 use crate::types::RareKmer;
 
@@ -18,6 +18,9 @@ pub(crate) fn evaluate_alignment(
     min_pct: f64,
     min_count: usize,
     use_base_seq: bool,
+    ins_cost: usize,
+    del_cost: usize,
+    sub_cost: usize,
 ) -> (bool, bool) {
     let ref_start = match record.alignment_start() {
         Some(Ok(pos)) => usize::from(pos) - 1,
@@ -76,6 +79,9 @@ pub(crate) fn evaluate_alignment(
 
     let mut valid_kmer_count = 0;
 
+    // We calculate the minimum possible penalty for a length mismatch
+    let min_indel_cost = ins_cost.min(del_cost);
+
     // Compliance Check
     for kmer in &kmers_in_range {
         let mut start_idx = kmer.start.saturating_sub(ref_start);
@@ -108,7 +114,10 @@ pub(crate) fn evaluate_alignment(
         let actual_len = (q_end_inclusive - q_start) + 1;
         let length_diff = actual_len.abs_diff(kmer_len);
 
-        if length_diff > kmer.local_tolerance {
+        // ALGORITHMIC OPTIMIZATION:
+        // If the length difference multiplied by the minimum indel cost already
+        // exceeds the tolerance, it is mathematically impossible to pass.
+        if (length_diff * min_indel_cost) > kmer.local_tolerance {
             continue;
         }
 
@@ -125,7 +134,7 @@ pub(crate) fn evaluate_alignment(
 
         if kmer.local_tolerance > 0 {
             let expected_seq = decode_kmer(kmer.val, kmer_len);
-            if edit_distance(expected_seq.as_bytes(), slice) <= kmer.local_tolerance {
+            if edit_distance_weighted(expected_seq.as_bytes(), slice, ins_cost, del_cost, sub_cost) <= kmer.local_tolerance {
                 valid_kmer_count += 1;
             }
         }

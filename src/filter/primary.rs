@@ -7,6 +7,7 @@ use super::utils::extract_chrom_name;
 
 const PRIMARY: bool = false;
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn process_primary_stream<R: std::io::Read, W: std::io::Write>(
     reader: &mut bam::io::Reader<R>,
     writer: &mut bam::io::Writer<W>,
@@ -15,6 +16,9 @@ pub(crate) fn process_primary_stream<R: std::io::Read, W: std::io::Write>(
     kmer_len: usize,
     min_pct: f64,
     min_count: usize,
+    ins_cost: usize,
+    del_cost: usize,
+    sub_cost: usize,
 ) -> Result<()> {
     let mut zero_kmers = 0;
     let mut unmapped = 0;
@@ -52,6 +56,9 @@ pub(crate) fn process_primary_stream<R: std::io::Read, W: std::io::Write>(
             min_pct,
             min_count,
             PRIMARY, // primary alignments contains the sequence - no need to borrow
+            ins_cost, // <--- Passed to engine
+            del_cost, // <--- Passed to engine
+            sub_cost, // <--- Passed to engine
         );
 
         if has_zero { zero_kmers += 1; }
