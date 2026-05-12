@@ -65,6 +65,10 @@ struct Args {
     #[arg(long, default_value_t = 1)]
     sub_cost: usize,
 
+    /// Optional: Path to output a BED file of regions with zero read coverage after filtering.
+    #[arg(long)]
+    coverage: Option<String>,
+
     /// Optional: Path to output a BED file of the rare k-mer coordinates.
     #[arg(short, long)]
     bed: Option<String>,
@@ -111,6 +115,7 @@ fn main() -> Result<()> {
         args.ins_cost,
         args.del_cost,
         args.sub_cost,
+        args.coverage
     )?;
 
     println!("BAM filtering complete. Saved to {}", args.output);

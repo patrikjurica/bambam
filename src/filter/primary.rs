@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use noodles::bam;
 use crate::types::KmerLibrary;
+use noodles::sam::alignment::Record;
 
 use super::engine::evaluate_alignment;
 use super::utils::extract_chrom_name;
@@ -19,9 +20,12 @@ pub(crate) fn process_primary_stream<R: std::io::Read, W: std::io::Write>(
     ins_cost: usize,
     del_cost: usize,
     sub_cost: usize,
-) -> Result<()> {
+) -> Result<Vec<Vec<(usize, usize)>>> {
     let mut zero_kmers = 0;
     let mut unmapped = 0;
+
+    // Array of arrays to hold coordinates per chromosome
+    let mut coverage_tracker = vec![Vec::new(); header.reference_sequences().len()];
 
     let mut ref_to_query_buffer: Vec<usize> = Vec::with_capacity(100_000);
     let mut decoded_seq_buffer: Vec<u8> = Vec::with_capacity(100_000);
@@ -64,10 +68,22 @@ pub(crate) fn process_primary_stream<R: std::io::Read, W: std::io::Write>(
         if has_zero { zero_kmers += 1; }
         if passes {
             writer.write_record(header, &record).context("Failed to write record")?;
+
+            // Extract boundaries for the coverage map
+            if let (Some(Ok(ref_id)), Some(Ok(start)), Some(Ok(end))) = (
+                record.reference_sequence_id(),
+                record.alignment_start(),
+                record.alignment_end(),
+            ) {
+                if ref_id < coverage_tracker.len() {
+                    // Convert 1-based inclusive BAM coords to 0-based exclusive BED coords
+                    coverage_tracker[ref_id].push((usize::from(start) - 1, usize::from(end)));
+                }
+            }
         }
     }
 
     println!("Number of alignments with zero rare kmers: {}", zero_kmers);
     println!("Number of unmapped/skipped alignments: {}", unmapped);
-    Ok(())
+    Ok(coverage_tracker)
 }

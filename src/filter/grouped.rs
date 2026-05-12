@@ -2,6 +2,7 @@ use anyhow::Result;
 use crossbeam_channel::bounded;
 use noodles::bam;
 use std::thread;
+use noodles::sam::alignment::Record;
 
 use crate::types::KmerLibrary;
 use super::engine::evaluate_alignment;
@@ -19,7 +20,7 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
     ins_cost: usize,
     del_cost: usize,
     sub_cost: usize,
-) -> Result<()> {
+) -> Result<Vec<Vec<(usize, usize)>>> {
     // 1. Create bounded channels to prevent RAM blowouts
     // Capacity of 1000 means the main thread will pause reading if workers get backed up.
     let (tx_work, rx_work) = bounded::<Vec<bam::Record>>(1000);
@@ -31,18 +32,29 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
     let num_cores = thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
     println!("Spawning {} worker threads for grouped secondary processing...", num_cores);
 
+    let mut final_coverage = Vec::new();
+
     // 2. Open the Thread Scope
     thread::scope(|s| {
-        // --- WRITER THREAD ---
-        // Because of `thread::scope`, we can safely borrow `writer` and `header`
-        // without needing Arc or Mutex!
-        s.spawn(|| {
+        let writer_handle = s.spawn(|| {
+            let mut coverage_tracker = vec![Vec::new(); header.reference_sequences().len()];
+
             for surviving_group in rx_write {
                 for record in surviving_group {
-                    // Write to disk sequentially
                     let _ = writer.write_record(header, &record);
+
+                    if let (Some(Ok(ref_id)), Some(Ok(start)), Some(Ok(end))) = (
+                        record.reference_sequence_id(),
+                        record.alignment_start(),
+                        record.alignment_end(),
+                    ) {
+                        if ref_id < coverage_tracker.len() {
+                            coverage_tracker[ref_id].push((usize::from(start) - 1, usize::from(end)));
+                        }
+                    }
                 }
             }
+            coverage_tracker // Return the populated array out of the thread
         });
 
         // --- WORKER THREADS ---
@@ -122,6 +134,8 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
         // Drop work transmitter to tell workers we are out of BAM records.
         drop(tx_work);
 
+        final_coverage = writer_handle.join().unwrap();
+
     }); // Scope ends here. Rust automatically waits for all threads to cleanly finish.
 
     // 3. Aggregate statistics
@@ -134,7 +148,7 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
 
     println!("Number of alignments with zero rare kmers: {}", total_zero);
     println!("Number of unmapped/skipped alignments: {}", total_unmapped);
-    Ok(())
+    Ok(final_coverage)
 }
 
 // Extracted core loop logic to keep the thread closure clean
