@@ -14,7 +14,7 @@ You will find the compiled binary inside ./target/release
 
 ## Usage
 ```terminaloutput
-$ bambam <INPUT_BAM_FILE> <OUTPUT_BAM_FILE> [options]
+$ bambam <INPUT_BAM_FILE> <REF_FILE> [options]
 ```
 
 ### Arguments
