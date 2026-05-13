@@ -36,6 +36,7 @@ struct Args {
     #[arg(short = 'p', long = "pct", default_value_t = 85.0)]
     pct: f64,
 
+    // TODO
     /// Length of the unique k-mer.
     #[arg(short, long, default_value_t = 31)]
     len: usize,
@@ -48,6 +49,27 @@ struct Args {
     #[arg(short, long, default_value_t = false)]
     dyn_tol: bool,
 
+    /// Only process primary alignments (faster, allows coordinate-sorted BAMs).
+    /// Otherwise, the bam file needs to be sorted by name.
+    #[arg(long, default_value_t = false)]
+    primary_only: bool,
+
+    /// Penalty cost for a nucleotide insertion
+    #[arg(long, default_value_t = 1)]
+    ins_cost: usize,
+
+    /// Penalty cost for a nucleotide deletion
+    #[arg(long, default_value_t = 1)]
+    del_cost: usize,
+
+    /// Penalty cost for a nucleotide substitution (SNP/Miscall)
+    #[arg(long, default_value_t = 1)]
+    sub_cost: usize,
+
+    /// Optional: Path to output a BED file of regions with zero read coverage after filtering.
+    #[arg(long)]
+    coverage: Option<String>,
+
     /// Optional: Path to output a BED file of the rare k-mer coordinates.
     #[arg(short, long)]
     bed: Option<String>,
@@ -58,8 +80,8 @@ fn main() -> Result<()> {
 
     let start_time = Instant::now();
 
-    println!("Building the k-mer dictionary...");
     // build_rare_kmers applies the baseline tolerance to all k-mers initially
+    println!("Building the k-mer dictionary...");
     let mut kmers = build_rare_kmers(&args.ref_file, args.len, args.min, args.max, args.tolerance)?;
 
     // ff dynamic tolerance requested, overwrite
@@ -90,6 +112,11 @@ fn main() -> Result<()> {
         args.len,
         args.pct,
         args.min_count,
+        args.primary_only,
+        args.ins_cost,
+        args.del_cost,
+        args.sub_cost,
+        args.coverage
     )?;
 
     println!("BAM filtering complete. Saved to {}", args.output);
