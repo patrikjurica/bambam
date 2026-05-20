@@ -21,12 +21,12 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
     del_cost: usize,
     sub_cost: usize,
 ) -> Result<Vec<Vec<(usize, usize)>>> {
-    // 1. Create bounded channels to prevent RAM blowouts
-    // Capacity of 1000 means the main thread will pause reading if workers get backed up.
+    // 1. create bounded channels to prevent RAM blowouts
+    // capacity of 1000 means the main thread will pause reading if workers get backed up.
     let (tx_work, rx_work) = bounded::<Vec<bam::Record>>(1000);
     let (tx_write, rx_write) = bounded::<Vec<bam::Record>>(1000);
 
-    // Channel to aggregate statistics from all threads before shutting down
+    // channel to aggregate statistics from all threads before shutting down
     let (tx_stats, rx_stats) = bounded::<(usize, usize)>(50);
 
     let num_cores = thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
@@ -34,7 +34,7 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
 
     let mut final_coverage = Vec::new();
 
-    // 2. Open the Thread Scope
+    // 2. open the Thread Scope
     thread::scope(|s| {
         let writer_handle = s.spawn(|| {
             let mut coverage_tracker = vec![Vec::new(); header.reference_sequences().len()];
@@ -54,7 +54,7 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
                     }
                 }
             }
-            coverage_tracker // Return the populated array out of the thread
+            coverage_tracker
         });
 
         // --- WORKER THREADS ---
@@ -64,8 +64,6 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
             let tx_stat = tx_stats.clone();
 
             s.spawn(move || {
-                // EVERY thread gets its own isolated, zero-allocation buffers.
-                // This prevents thread locking and maximizes CPU cache hits.
                 let mut ref_to_query_buffer = Vec::with_capacity(100_000);
                 let mut base_seq_buffer = Vec::with_capacity(100_000);
                 let mut local_seq_buffer = Vec::with_capacity(100_000);
@@ -82,23 +80,18 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
                         &mut local_zero, &mut local_unmapped, &mut ref_to_query_buffer,
                         &mut base_seq_buffer, &mut local_seq_buffer,
                         &mut valid_group_buffer,
-                        ins_cost, del_cost, sub_cost // <--- Passed to helper
+                        ins_cost, del_cost, sub_cost
                     );
 
                     if !valid_group_buffer.is_empty() {
-                        // `mem::take` swaps the full buffer with an empty one,
-                        // sending the data to the writer without cloning the Vec!
                         let _ = tx.send(std::mem::take(&mut valid_group_buffer));
                     }
                 }
 
-                // When rx channel closes, send stats back to main
                 let _ = tx_stat.send((local_zero, local_unmapped));
             });
         }
-
-        // Drop the original clones of transmitters in the main thread
-        // so the channels know exactly when to close.
+        
         drop(tx_write);
         drop(tx_stats);
 
@@ -119,7 +112,6 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
 
             if Some(&qname) != current_qname.as_ref() {
                 if !read_group.is_empty() {
-                    // Send group to workers. using mem::take reuses the allocation.
                     tx_work.send(std::mem::take(&mut read_group)).expect("Worker channel crashed");
                 }
                 current_qname = Some(qname);
@@ -131,12 +123,11 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
             let _ = tx_work.send(read_group);
         }
 
-        // Drop work transmitter to tell workers we are out of BAM records.
         drop(tx_work);
 
         final_coverage = writer_handle.join().unwrap();
 
-    }); // Scope ends here. Rust automatically waits for all threads to cleanly finish.
+    }); // Scope ends here. waits for all threads to cleanly finish.
 
     // 3. Aggregate statistics
     let mut total_zero = 0;
@@ -151,7 +142,7 @@ pub(crate) fn process_grouped_stream<R: std::io::Read, W: std::io::Write + Send>
     Ok(final_coverage)
 }
 
-// Extracted core loop logic to keep the thread closure clean
+// extracted core loop logic 
 #[allow(clippy::too_many_arguments)]
 fn evaluate_group(
     group: &[bam::Record],
@@ -172,7 +163,7 @@ fn evaluate_group(
 ) {
     base_seq_buffer.clear();
 
-    // Find longest sequence to borrow
+    // find longest sequence to borrow
     for rec in group {
         let seq = rec.sequence();
         if seq.len() > base_seq_buffer.len() {
@@ -215,7 +206,7 @@ fn evaluate_group(
         let (passes, has_zero) = evaluate_alignment(
             record, active_seq, chrom_kmers, ref_to_query_buffer,
             kmer_len, min_pct, min_count, use_base_seq,
-            ins_cost, del_cost, sub_cost // <--- Passed to engine
+            ins_cost, del_cost, sub_cost 
         );
 
         if has_zero { *local_zero += 1; }

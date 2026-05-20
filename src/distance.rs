@@ -8,9 +8,6 @@ pub fn edit_distance_weighted(
     del_cost: usize,
     sub_cost: usize,
 ) -> usize {
-    // Optimization: ensure s2 is the shorter slice to minimize memory allocation.
-    // CRITICAL FIX: If we swap the sequences, we MUST also swap the insertion
-    // and deletion costs to maintain the biological direction of the alignment!
     let (s1, s2, active_ins_cost, active_del_cost) = if s1.len() < s2.len() {
         (s2, s1, del_cost, ins_cost)
     } else {
@@ -20,9 +17,7 @@ pub fn edit_distance_weighted(
     if s2.is_empty() {
         return s1.len() * active_del_cost;
     }
-
-    // Initialize previous_row with cumulative insertion costs 
-    // (Instead of 0, 1, 2... it becomes 0, ins, 2*ins...)
+    
     let mut previous_row: Vec<usize> = (0..=s2.len()).map(|x| x * active_ins_cost).collect();
     let mut current_row = vec![0; s2.len() + 1];
 

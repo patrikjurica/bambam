@@ -1,6 +1,6 @@
 use rustc_hash::FxHashMap;
 
-pub type KmerVal = u64;
+pub type KmerVal = u128;
 
 /// Represents a single rare k-mer anchored to the reference genome.
 ///

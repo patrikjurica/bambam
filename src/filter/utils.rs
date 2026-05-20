@@ -1,6 +1,6 @@
 use noodles::bam;
 
-/// Helper to safely extract chromosome strings from the header map
+/// helper to safely extract chromosome strings from the header map
 pub(crate) fn extract_chrom_name(record: &bam::Record, header: &noodles::sam::Header) -> Option<String> {
     let ref_id = match record.reference_sequence_id() {
         Some(Ok(id)) => id,

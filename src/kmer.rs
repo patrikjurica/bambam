@@ -1,16 +1,16 @@
 use crate::types::KmerVal;
 
-const A: u64 = 0b00; // 0
-const C: u64 = 0b01; // 1
-const G: u64 = 0b10; // 2
-const T: u64 = 0b11; // 3
+const A: u128 = 0b00; // 0
+const C: u128 = 0b01; // 1
+const G: u128 = 0b10; // 2
+const T: u128 = 0b11; // 3
 
-const U: u64 = 0b11; // for RNA (T = U)
+const U: u128 = 0b11; // for RNA (T = U)
 
 /// encodes a single nucleotide byte into its 2-bit representation
 /// returns `None` if it encounters an 'N' or any invalid character
 #[inline(always)]
-pub fn encode_base(base: u8) -> Option<u64> {
+pub fn encode_base(base: u8) -> Option<u128> {
     match base {
         b'A' | b'a' => Some(A),
         b'C' | b'c' => Some(C),
@@ -23,7 +23,7 @@ pub fn encode_base(base: u8) -> Option<u64> {
 
 /// encodes a complete DNA sequence (as a byte slice) into a 2-bit integer representation
 pub fn encode_kmer(seq: &[u8]) -> Option<KmerVal> {
-    let mut kmer: u64 = 0;
+    let mut kmer: u128 = 0;
 
     for &byte in seq {
         kmer <<= 2;
@@ -38,7 +38,6 @@ pub fn encode_kmer(seq: &[u8]) -> Option<KmerVal> {
 
 /// decodes a 2-bit integer back into a DNA String of the specified length
 pub fn decode_kmer(mut val: KmerVal, length: usize) -> String {
-    // pre-allocate the vector to the exact length to avoid memory reallocations
     let mut chars = Vec::with_capacity(length);
 
     for _ in 0..length {
@@ -54,7 +53,7 @@ pub fn decode_kmer(mut val: KmerVal, length: usize) -> String {
         val >>= 2;
     }
 
-    // for cycle goes from zero to length, so we need to reverse
+    // (for cycle goes from zero to length, so we need to reverse)
     chars.reverse();
 
     String::from_utf8(chars).unwrap()

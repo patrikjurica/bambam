@@ -15,11 +15,10 @@ pub fn build_rare_kmers(
     max_count: u32,
     base_tolerance: usize,
 ) -> Result<KmerLibrary> {
-    // prevent overflow if asked for a k-mer of exactly 32
-    let mask: u64 = if kmer_len == 32 {
-        u64::MAX
+    let mask: u128 = if kmer_len == 64 {
+        u128::MAX
     } else {
-        (1_u64 << (2 * kmer_len)) - 1
+        (1_u128 << (2 * kmer_len)) - 1
     };
 
     println!("Pass 1: Counting k-mers in the reference genome...");
@@ -32,7 +31,7 @@ pub fn build_rare_kmers(
 
     for result in reader.records() {
         let record = result.context("Failed to read FASTA record")?;
-        let mut kmer_val: u64 = 0;
+        let mut kmer_val: u128 = 0;
         let mut valid_bases: usize = 0;
 
         for &byte in record.sequence().as_ref() {
@@ -53,7 +52,7 @@ pub fn build_rare_kmers(
 
     println!("Total unique k-mers found: {}", kmer_counts.len());
 
-    // filter into a much smaller HashSet containing only the valid rare k-mers
+    // filter into a smaller HashSet containing only the valid rare k-mers
     let mut valid_kmers: FxHashSet<KmerVal> = FxHashSet::default();
     for (kmer, count) in kmer_counts.into_iter() {
         if count >= min_count && count <= max_count {
@@ -78,7 +77,7 @@ pub fn build_rare_kmers(
         let chrom = String::from_utf8_lossy(record.name()).into_owned();
         let mut chrom_kmers = Vec::new();
 
-        let mut kmer_val: u64 = 0;
+        let mut kmer_val: u128 = 0;
         let mut valid_bases: usize = 0;
 
         for (i, &byte) in record.sequence().as_ref().iter().enumerate() {
@@ -88,13 +87,13 @@ pub fn build_rare_kmers(
 
                 if valid_bases >= kmer_len && valid_kmers.contains(&kmer_val) {
                     let start = i + 1 - kmer_len;
-                    let end = i + 1; // Exclusive end
+                    let end = i + 1;
 
                     chrom_kmers.push(RareKmer {
                         start,
                         end,
                         val: kmer_val,
-                        local_tolerance: base_tolerance, // Initialize with baseline tolerance
+                        local_tolerance: base_tolerance,
                     });
                 }
             } else {
@@ -126,8 +125,6 @@ pub fn apply_dynamic_threshold_tolerance(
         }
 
         for i in 0..n {
-            // saturating_sub prevents integer underflow (crashing) if the distances are weird
-            // TODO: check
             let dist_left = if i > 0 {
                 kmers[i].start.saturating_sub(kmers[i - 1].end)
             } else {
