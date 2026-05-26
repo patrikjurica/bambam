@@ -36,9 +36,9 @@ $ bambam <INPUT_BAM_FILE> <REF_FILE> [options]
   |-d| --dyn-tol |                Enable dynamic, density-aware tolerance based on k-mer isolation | |
   |  | --thr |                    Set distance threshold for dynamic tolerance | 5000 |
   |  | --primary-only |          Only process primary alignments (faster, allows coordinate-sorted BAMs). Otherwise, the BAM file needs to be sorted by name | |
-  |  | --ins-cost   |            Penalty cost for nucleotide insertion ||
-  |  | --del-cost   |            Penalty cost for nucleotide deletion ||
-  |  | --sub-cost   |            Penalty cost for nucleotide substitution ||
+  |  | --ins-cost   |            Penalty cost for nucleotide insertion | 1 |
+  |  | --del-cost   |            Penalty cost for nucleotide deletion | 1 |
+  |  | --sub-cost   |            Penalty cost for nucleotide substitution | 1 |
   |  | --coverage   |            Optional: Path to output a BED file of regions with zero read coverage after filtering. || 
   |-b| --bed <BED>  |            Optional: Path to output a BED file of the rare k-mer coordinates | |
   |-h| --help    |               Print help  |

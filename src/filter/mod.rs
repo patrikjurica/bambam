@@ -12,9 +12,9 @@ mod engine;
 mod utils;
 mod coverage;
 
-/// Filters a BAM file based on absolute positional compliance of rare k-mers.
-/// Acts as a router: if `primary_only` is true, it uses a high-speed sequential stream.
-/// If false, it groups alignments by QNAME (Requires `samtools sort -n`)
+/// filters a BAM file based on absolute positional compliance of rare k-mers.
+/// acts as a router: if `primary_only` is true, it uses sequential stream.
+/// ff false, it groups alignments by QNAME (Requires `samtools sort -n`)
 /// and parallelizes the processing
 #[allow(clippy::too_many_arguments)]
 pub fn filter_bam(
@@ -62,7 +62,7 @@ pub fn filter_bam(
     ));
     writer.write_header(&header).context("Failed to write BAM header")?;
 
-    // Capture the raw interval data returned by the streams
+    // capture the raw interval data returned by the streams
     let final_coverage = if primary_only {
         println!("Running in PRIMARY ONLY mode. Processing sequentially...");
         primary::process_primary_stream(
@@ -77,7 +77,7 @@ pub fn filter_bam(
         )?
     };
 
-    // Process and write the BED file if requested
+    // process and write the BED file if requested
     if let Some(path) = coverage_path {
         println!("Computing zero-coverage gaps...");
         coverage::write_coverage_gaps(&header, final_coverage, &path)?;

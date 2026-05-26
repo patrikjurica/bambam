@@ -19,10 +19,10 @@ pub fn write_coverage_gaps(
 
         let intervals = &mut coverage[ref_id];
 
-        // 1. Sort intervals by start coordinate in O(N log N) time
+        // 1. Sort intervals by start coordinate
         intervals.sort_unstable_by_key(|&(s, _)| s);
 
-        // 2. Merge overlapping intervals in O(N) time
+        // 2. Merge overlapping intervals 
         let mut merged = Vec::new();
         if !intervals.is_empty() {
             let mut current = intervals[0];
@@ -37,7 +37,7 @@ pub fn write_coverage_gaps(
             merged.push(current);
         }
 
-        // 3. Invert the merged intervals to find the gaps
+        // 3. Invert the merged intervals to find  gaps
         let mut current_pos = 0;
         for &(start, end) in &merged {
             if start > current_pos {
@@ -46,7 +46,7 @@ pub fn write_coverage_gaps(
             current_pos = current_pos.max(end);
         }
 
-        // 4. Capture the final gap extending to the end of the chromosome
+        // 4. Capture the final gap extending to the end of the chromosome / arr
         if current_pos < ref_len {
             writeln!(writer, "{}\t{}\t{}", name, current_pos, ref_len)?;
         }

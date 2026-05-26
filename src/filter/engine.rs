@@ -113,10 +113,7 @@ pub(crate) fn evaluate_alignment(
 
         let actual_len = (q_end_inclusive - q_start) + 1;
         let length_diff = actual_len.abs_diff(kmer_len);
-
-        // ALGORITHMIC OPTIMIZATION:
-        // If the length difference multiplied by the minimum indel cost already
-        // exceeds the tolerance, it is mathematically impossible to pass.
+        
         if (length_diff * min_indel_cost) > kmer.local_tolerance {
             continue;
         }

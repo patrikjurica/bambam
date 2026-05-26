@@ -24,7 +24,7 @@ pub(crate) fn process_primary_stream<R: std::io::Read, W: std::io::Write>(
     let mut zero_kmers = 0;
     let mut unmapped = 0;
 
-    // Array of arrays to hold coordinates per chromosome
+    // array of arrays to hold coordinates per chromosome
     let mut coverage_tracker = vec![Vec::new(); header.reference_sequences().len()];
 
     let mut ref_to_query_buffer: Vec<usize> = Vec::with_capacity(100_000);
@@ -59,24 +59,22 @@ pub(crate) fn process_primary_stream<R: std::io::Read, W: std::io::Write>(
             kmer_len,
             min_pct,
             min_count,
-            PRIMARY, // primary alignments contains the sequence - no need to borrow
-            ins_cost, // <--- Passed to engine
-            del_cost, // <--- Passed to engine
-            sub_cost, // <--- Passed to engine
+            PRIMARY, 
+            ins_cost, 
+            del_cost, 
+            sub_cost,
         );
 
         if has_zero { zero_kmers += 1; }
         if passes {
             writer.write_record(header, &record).context("Failed to write record")?;
 
-            // Extract boundaries for the coverage map
             if let (Some(Ok(ref_id)), Some(Ok(start)), Some(Ok(end))) = (
                 record.reference_sequence_id(),
                 record.alignment_start(),
                 record.alignment_end(),
             ) {
                 if ref_id < coverage_tracker.len() {
-                    // Convert 1-based inclusive BAM coords to 0-based exclusive BED coords
                     coverage_tracker[ref_id].push((usize::from(start) - 1, usize::from(end)));
                 }
             }
