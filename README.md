@@ -1,6 +1,9 @@
 # BAMBAM - a rare k-mer read filtering tool
 ![Logo](logo_bambam.png)
+
 A tool for filtering BAM files based on the presence, position and structural compliance of rare k-mers.
+
+The full text is available in this repo as thesis.pdf. 
 
 ## How to install
 If you have not already, install Rust using this link:  
